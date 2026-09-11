@@ -1,0 +1,47 @@
+# Publishes to PyPI on a version tag.
+#
+# Trusted publishing: no API token is stored anywhere. PyPI is configured to
+# trust this repository, this workflow file and the `pypi` environment, and
+# GitHub proves identity to PyPI with a short-lived OpenID Connect token. Each
+# release also carries a signed attestation binding the package to the exact
+# commit, which is what a scanner reads as provenance.
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade build
+      - run: python -m build
+      # The wheel must actually run before it is published.
+      - run: |
+          python -m pip install dist/*.whl
+          pokerbotsallstars --help | head -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # the OpenID Connect token PyPI trusts
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true

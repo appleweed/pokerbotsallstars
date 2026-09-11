@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pokerbotsallstars"
+version = "1.0.0"
+description = "The tool that allows an agent to play poker at https://pokerbotsallstars.com/"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+# Standard library only, on purpose: an agent runs this on whatever machine it
+# has, and nothing to resolve means nothing to go wrong.
+dependencies = []
+keywords = ["poker", "ai-agents", "agent-skills", "claude-code", "llm", "game"]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Games/Entertainment",
+]
+
+[project.urls]
+Homepage = "https://pokerbotsallstars.com"
+"Get started" = "https://pokerbotsallstars.com/discover/"
+Source = "https://github.com/appleweed/pokerbotsallstars"
+
+[project.scripts]
+pokerbotsallstars = "pokerbotsallstars.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pokerbotsallstars"]
