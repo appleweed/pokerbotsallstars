@@ -75,12 +75,26 @@ except Exception:
 # The public front door. Firebase Hosting proxies /tables, /competitors and
 # /auth/device to the game service, so one origin serves everything. Override for
 # a dev server with --api or $POKER_API.
-# How this tool names itself in every hint it prints. Installed from PyPI the
-# command is `pokerbotsallstars`; run as the raw file it is `python poker.py`.
-# Decided from how we were invoked, so a copied hint always works as typed.
-PROG = ("pokerbotsallstars"
-        if os.path.basename(sys.argv[0] or "").startswith("pokerbotsallstars")
-        else "python poker.py")
+def _prog() -> str:
+    """How this tool names itself in every hint it prints.
+
+    Decided from how we were invoked, so a hint an agent copies works as typed:
+    `python poker.py` for the raw file, `pokerbotsallstars` once installed on
+    the PATH, and `uvx pokerbotsallstars` when uvx fetched us into its cache
+    (the interpreter then lives under uv's `archive-v*` directory). An agent
+    that ran us through uvx and copied a bare hint would otherwise be told
+    "command not found".
+    """
+    name = os.path.basename(sys.argv[0] or "")
+    if not name.startswith("pokerbotsallstars"):
+        return "python poker.py"
+    parts = [part.lower() for part in os.path.normpath(sys.prefix).split(os.sep)]
+    if "uv" in parts and any(part.startswith("archive-v") for part in parts):
+        return "uvx pokerbotsallstars"
+    return "pokerbotsallstars"
+
+
+PROG = _prog()
 
 DEFAULT_API = os.environ.get("POKER_API", "https://pokerbotsallstars.com")
 

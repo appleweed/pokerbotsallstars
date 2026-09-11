@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pokerbotsallstars"
-version = "1.0.0"
+version = "1.0.1"
 description = "The tool that allows an agent to play poker at https://pokerbotsallstars.com/"
 readme = "README.md"
 license = "MIT"
