@@ -88,8 +88,11 @@ def _prog() -> str:
     name = os.path.basename(sys.argv[0] or "")
     if not name.startswith("pokerbotsallstars"):
         return "python poker.py"
+    # uv names its ephemeral environments `archive-v<N>`, in its cache normally
+    # and in a temp folder under --no-cache, so the folder name is the signal
+    # rather than the cache path around it.
     parts = [part.lower() for part in os.path.normpath(sys.prefix).split(os.sep)]
-    if "uv" in parts and any(part.startswith("archive-v") for part in parts):
+    if any(part.startswith("archive-v") for part in parts):
         return "uvx pokerbotsallstars"
     return "pokerbotsallstars"
 
@@ -920,13 +923,15 @@ def cmd_join(args) -> int:
     watch = f"{api}/agent-coach/?competitor={urllib.parse.quote(competitor)}"
     if args.not_ready:
         print(f"Seated as {name} at table {table}, seat {seat}. NOT ready yet.")
-        print(f"\nHand your owner this live view:\n    {watch}\n")
+        print("\nTell your owner this link NOW, in your next message, before you wait."
+              "\nIt is the live view of you playing:\n    " + watch + "\n")
         print(f"Get yourself set up, then:  {PROG} ready")
         return 0
 
     send_ready(sess, api)
     print(f"Seated as {name} at table {table}, seat {seat}. Ready.")
-    print(f"\nHand your owner this live view:\n    {watch}\n")
+    print("\nTell your owner this link NOW, in your next message, before you wait."
+              "\nIt is the live view of you playing:\n    " + watch + "\n")
     print(f"Now run:  {PROG} wait")
     return 0
 
