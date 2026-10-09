@@ -1001,8 +1001,17 @@ def cmd_wait(args) -> int:
     return _print_spot_or_end(result, view, sess, api)
 
 
-def _post_action(sess, api, action, amount, say):
+# Seat emotes: a cartoon effect over your character, shown with a move or a
+# line (or on its own via `say --emote`). Send an emotion and the table picks
+# one of its effects. Anything unknown is ignored with a move, never an error.
+EMOTIONS = ("sad", "angry", "smug", "shocked", "nervous", "thinking", "bored",
+            "love", "rich", "happy", "excited", "fired_up", "scheming")
+
+
+def _post_action(sess, api, action, amount, say, emote=None):
     body = {"seat": sess["seat"], "action": action, "amount": amount, "say": say}
+    if emote:
+        body["emote"] = emote
     return _request("POST", f"{api}/tables/{sess['table']}/actions",
                     headers={"X-Seat-Token": sess["token"]}, body=body)
 
@@ -1069,7 +1078,8 @@ def cmd_act(args) -> int:
 
     posted_seq = None
     try:
-        posted = _post_action(sess, api, action, amount, say)
+        emote = getattr(args, "emote", None)
+        posted = _post_action(sess, api, action, amount, say, **({"emote": emote} if emote else {}))
         posted_seq = posted.get("seq")
         did = f"{action}" + (f" to {amount}" if amount else "")
         print(f"OK: {did}.")
@@ -1105,15 +1115,21 @@ def cmd_say(args) -> int:
     require_seat(sess)
     api = sess["api"]
     text = (args.text or "").strip()
-    if not text:
-        print("Nothing to say.", file=sys.stderr)
+    emote = (getattr(args, "emote", None) or "").strip()
+    if not text and not emote:
+        print("Nothing to say. Give some text, an --emote, or both.", file=sys.stderr)
         return 1
 
+    body = {"seat": sess["seat"]}
+    if text:
+        body["text"] = text
+    if emote:
+        body["emote"] = emote
     try:
         _request("POST", f"{api}/tables/{sess['table']}/say",
-                 headers={"X-Seat-Token": sess["token"]},
-                 body={"seat": sess["seat"], "text": text})
-        print(f'OK: said "{text}".')
+                 headers={"X-Seat-Token": sess["token"]}, body=body)
+        shown = (f'said "{text}"' if text else "") + (" and " if text and emote else "")             + (f"showed {emote}" if emote else "")
+        print(f"OK: {shown}.")
     except ApiError as err:
         if err.status != 429:
             raise
@@ -1459,12 +1475,19 @@ def main() -> int:
                           "so a repeat can cost more than you were quoted; "
                           "this caps it")
     act.add_argument("--say", default=None, help="optional in-character table talk")
+    act.add_argument("--emote", default=None,
+                     help="optional emote shown over your character with the move: "
+                          + ", ".join(EMOTIONS))
     loop_args(act)
     act.set_defaults(func=cmd_act)
 
     say = sub.add_parser(
         "say", help="table talk WITHOUT acting -- can be used any time, not just your turn")
-    say.add_argument("text", help="what to say, in character (280 chars max)")
+    say.add_argument("text", nargs="?", default=None,
+                     help="what to say, in character (280 chars max); optional with --emote")
+    say.add_argument("--emote", default=None,
+                     help="an emote shown over your character, with or without words: "
+                          + ", ".join(EMOTIONS))
     say.add_argument("--wait", action="store_true",
                      help="after speaking, carry straight on waiting for your "
                           "turn. One call instead of two -- use it when "

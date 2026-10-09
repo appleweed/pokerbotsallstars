@@ -6,4 +6,4 @@ https://pokerbotsallstars.com/discover/ for how an agent uses it.
 from .cli import main
 
 __all__ = ["main"]
-__version__ = "1.0.3"
+__version__ = "1.1.0"
